@@ -1,12 +1,8 @@
 function getTokenEndpoint(): string {
-  // Allow override via env var — DealCloud token URL varies by deployment.
-  // Common values:
-  //   https://unifiedidentity6.dealcloud.com/connect/token   (SaaS)
-  //   https://YOURSITE.dealcloud.com/connect/token           (on-prem / some tenants)
   if (process.env.DEALCLOUD_TOKEN_URL) return process.env.DEALCLOUD_TOKEN_URL;
   const siteUrl = process.env.DEALCLOUD_SITE_URL?.replace(/\/$/, '');
-  if (siteUrl) return `${siteUrl}/connect/token`;
-  return 'https://unifiedidentity6.dealcloud.com/connect/token';
+  if (siteUrl) return `${siteUrl}/api/rest/v1/oauth/token`;
+  throw new Error('DEALCLOUD_SITE_URL environment variable is required');
 }
 const REQUEST_DELAY_MS = 500;
 const MAX_RETRIES = 3;
@@ -27,6 +23,7 @@ async function getAccessToken(): Promise<string> {
   }
 
   const body = new URLSearchParams({
+    scope: 'data user_management',
     grant_type: 'client_credentials',
     client_id: clientId,
     client_secret: apiKey,
