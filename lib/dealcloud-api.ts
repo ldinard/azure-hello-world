@@ -1,4 +1,13 @@
-const TOKEN_ENDPOINT = 'https://unifiedidentity6.dealcloud.com/connect/token';
+function getTokenEndpoint(): string {
+  // Allow override via env var — DealCloud token URL varies by deployment.
+  // Common values:
+  //   https://unifiedidentity6.dealcloud.com/connect/token   (SaaS)
+  //   https://YOURSITE.dealcloud.com/connect/token           (on-prem / some tenants)
+  if (process.env.DEALCLOUD_TOKEN_URL) return process.env.DEALCLOUD_TOKEN_URL;
+  const siteUrl = process.env.DEALCLOUD_SITE_URL?.replace(/\/$/, '');
+  if (siteUrl) return `${siteUrl}/connect/token`;
+  return 'https://unifiedidentity6.dealcloud.com/connect/token';
+}
 const REQUEST_DELAY_MS = 500;
 const MAX_RETRIES = 3;
 
@@ -24,7 +33,8 @@ async function getAccessToken(): Promise<string> {
     scope: 'api',
   });
 
-  const res = await fetch(TOKEN_ENDPOINT, {
+  const tokenEndpoint = getTokenEndpoint();
+  const res = await fetch(tokenEndpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
@@ -32,7 +42,7 @@ async function getAccessToken(): Promise<string> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Failed to get access token: ${res.status} ${text}`);
+    throw new Error(`Failed to get access token from ${tokenEndpoint}: ${res.status} ${text}`);
   }
 
   const data = await res.json() as { access_token: string; expires_in: number };
