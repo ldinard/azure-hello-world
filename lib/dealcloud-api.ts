@@ -157,6 +157,17 @@ export async function queryRowsPage(
   return { rows: data.data ?? [], total: data.total ?? 0 };
 }
 
+export async function fetchEntryTypes(): Promise<unknown[]> {
+  const res = await apiRequest('/api/rest/v1/schema');
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch entry types: ${res.status} ${text}`);
+  }
+
+  return res.json();
+}
+
 export async function fetchSchemaFields(entryTypeId: number): Promise<unknown[]> {
   const res = await apiRequest(`/api/rest/v1/schema/${entryTypeId}/fields`);
 
