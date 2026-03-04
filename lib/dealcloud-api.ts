@@ -23,7 +23,7 @@ async function getAccessToken(): Promise<string> {
   }
 
   const body = new URLSearchParams({
-    scope: 'data user_management',
+    scope: 'data',
     grant_type: 'client_credentials',
     client_id: clientId,
     client_secret: apiKey,
