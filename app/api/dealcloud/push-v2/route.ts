@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
           firstSampleErrors = sampleErrors;
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message.slice(0, 200) : 'Unknown error';
+        const msg = err instanceof Error ? err.message.slice(0, 500) : 'Unknown error';
         batchLogs.push({ batch: batchIndex, created: 0, failed: batch.length, error: msg });
         totalFailed += batch.length;
       }

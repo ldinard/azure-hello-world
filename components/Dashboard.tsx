@@ -253,9 +253,10 @@ export default function Dashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entryTypeId: selectedId, fieldIds, skip, limit }),
         });
-        const data = (await res.json()) as { rows: Record<string, unknown>[]; total: number };
-        total = data.total;
-        allRows.push(...data.rows);
+        const data = (await res.json()) as { rows?: Record<string, unknown>[]; total?: number; error?: string };
+        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+        total = data.total ?? 0;
+        allRows.push(...(data.rows ?? []));
         setSiteData([...allRows]);
         setSiteTotal(total);
         setSiteLoaded(allRows.length);
