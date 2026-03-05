@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     let totalCreated = 0;
     let totalFailed = 0;
     const batchLogs: { batch: number; created: number; failed: number; error?: string }[] = [];
+    let firstSampleErrors: unknown[] = [];
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE);
@@ -30,18 +31,26 @@ export async function POST(req: NextRequest) {
       if (i > 0) await delay(BATCH_DELAY_MS);
 
       try {
-        const { created, failed } = await createRows(entryTypeId, batch);
+        const { created, failed, sampleErrors } = await createRows(entryTypeId, batch);
         totalCreated += created;
         totalFailed += failed;
         batchLogs.push({ batch: batchIndex, created, failed });
+        if (firstSampleErrors.length === 0 && sampleErrors.length > 0) {
+          firstSampleErrors = sampleErrors;
+        }
       } catch (err) {
-        const msg = err instanceof Error ? err.message.slice(0, 200) : 'Unknown error';
+        const msg = err instanceof Error ? err.message.slice(0, 500) : 'Unknown error';
         batchLogs.push({ batch: batchIndex, created: 0, failed: batch.length, error: msg });
         totalFailed += batch.length;
       }
     }
 
-    return NextResponse.json({ created: totalCreated, failed: totalFailed, batches: batchLogs });
+    return NextResponse.json({
+      created: totalCreated,
+      failed: totalFailed,
+      batches: batchLogs,
+      sampleErrors: firstSampleErrors,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },

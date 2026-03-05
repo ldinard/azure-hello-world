@@ -48,7 +48,7 @@ export default function PushLog({ entries }: PushLogProps) {
           <div className="min-w-0">
             <span className="text-foreground">{entry.message}</span>
             {entry.detail && (
-              <div className="text-muted-foreground mt-0.5 truncate">{entry.detail}</div>
+              <pre className="text-muted-foreground mt-0.5 whitespace-pre-wrap break-all">{entry.detail}</pre>
             )}
           </div>
         </div>

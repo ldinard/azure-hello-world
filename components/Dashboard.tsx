@@ -112,13 +112,29 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entryTypeId: selectedId, rows: payloads }),
       });
-      const data = (await res.json()) as { created: number; failed: number; error?: string };
+      const data = (await res.json()) as {
+        created: number;
+        failed: number;
+        error?: string;
+        sampleErrors?: unknown[];
+        batches?: { batch: number; created: number; failed: number; error?: string }[];
+      };
 
       if (!res.ok) throw new Error(data.error ?? 'Push failed');
       addLog(
         data.failed > 0 ? 'warning' : 'success',
         `Push complete — ${data.created} created, ${data.failed} failed`,
       );
+      if (data.failed > 0) {
+        const batchError = data.batches?.find(b => b.error)?.error;
+        if (batchError) {
+          addLog('error', 'DealCloud error', batchError);
+        } else if (data.sampleErrors?.length) {
+          addLog('error', 'Failed record (sample)', JSON.stringify(data.sampleErrors[0], null, 2));
+        } else {
+          addLog('error', 'No error detail returned', JSON.stringify(data, null, 2));
+        }
+      }
     } catch (err) {
       addLog('error', 'Push failed', err instanceof Error ? err.message : String(err));
     } finally {
@@ -239,9 +255,10 @@ export default function Dashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entryTypeId: selectedId, fieldIds, skip, limit }),
         });
-        const data = (await res.json()) as { rows: Record<string, unknown>[]; total: number };
-        total = data.total;
-        allRows.push(...data.rows);
+        const data = (await res.json()) as { rows?: Record<string, unknown>[]; total?: number; error?: string };
+        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+        total = data.total ?? 0;
+        allRows.push(...(data.rows ?? []));
         setSiteData([...allRows]);
         setSiteTotal(total);
         setSiteLoaded(allRows.length);
