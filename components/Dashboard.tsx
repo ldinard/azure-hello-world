@@ -121,18 +121,20 @@ export default function Dashboard() {
       };
 
       if (!res.ok) throw new Error(data.error ?? 'Push failed');
-      const batchError = data.batches?.find(b => b.error)?.error;
-      const detail =
-        data.failed > 0
-          ? (data.sampleErrors?.length
-              ? JSON.stringify(data.sampleErrors[0], null, 2)
-              : batchError ?? undefined)
-          : undefined;
       addLog(
         data.failed > 0 ? 'warning' : 'success',
         `Push complete — ${data.created} created, ${data.failed} failed`,
-        detail,
       );
+      if (data.failed > 0) {
+        const batchError = data.batches?.find(b => b.error)?.error;
+        if (batchError) {
+          addLog('error', 'DealCloud error', batchError);
+        } else if (data.sampleErrors?.length) {
+          addLog('error', 'Failed record (sample)', JSON.stringify(data.sampleErrors[0], null, 2));
+        } else {
+          addLog('error', 'No error detail returned', JSON.stringify(data, null, 2));
+        }
+      }
     } catch (err) {
       addLog('error', 'Push failed', err instanceof Error ? err.message : String(err));
     } finally {
