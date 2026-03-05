@@ -6,6 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - laurentdinard12345
 on:
   push:
     branches:
+      - master
       - claude/post-app-service-setup-TL9GV
   workflow_dispatch:
 
@@ -22,6 +23,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
