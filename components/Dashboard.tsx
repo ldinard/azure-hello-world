@@ -117,15 +117,21 @@ export default function Dashboard() {
         failed: number;
         error?: string;
         sampleErrors?: unknown[];
+        batches?: { batch: number; created: number; failed: number; error?: string }[];
       };
 
       if (!res.ok) throw new Error(data.error ?? 'Push failed');
+      const batchError = data.batches?.find(b => b.error)?.error;
+      const detail =
+        data.failed > 0
+          ? (data.sampleErrors?.length
+              ? JSON.stringify(data.sampleErrors[0], null, 2)
+              : batchError ?? undefined)
+          : undefined;
       addLog(
         data.failed > 0 ? 'warning' : 'success',
         `Push complete — ${data.created} created, ${data.failed} failed`,
-        data.failed > 0 && data.sampleErrors?.length
-          ? JSON.stringify(data.sampleErrors[0], null, 2)
-          : undefined,
+        detail,
       );
     } catch (err) {
       addLog('error', 'Push failed', err instanceof Error ? err.message : String(err));
