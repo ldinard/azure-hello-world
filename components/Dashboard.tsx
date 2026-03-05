@@ -112,12 +112,20 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entryTypeId: selectedId, rows: payloads }),
       });
-      const data = (await res.json()) as { created: number; failed: number; error?: string };
+      const data = (await res.json()) as {
+        created: number;
+        failed: number;
+        error?: string;
+        sampleErrors?: unknown[];
+      };
 
       if (!res.ok) throw new Error(data.error ?? 'Push failed');
       addLog(
         data.failed > 0 ? 'warning' : 'success',
         `Push complete — ${data.created} created, ${data.failed} failed`,
+        data.failed > 0 && data.sampleErrors?.length
+          ? JSON.stringify(data.sampleErrors[0], null, 2)
+          : undefined,
       );
     } catch (err) {
       addLog('error', 'Push failed', err instanceof Error ? err.message : String(err));
