@@ -1,20 +1,10 @@
 function getTokenEndpoint(): string {
-  // Allow override via env var — DealCloud token URL varies by deployment.
-  // Common values:
-  //   https://unifiedidentity6.dealcloud.com/connect/token   (SaaS)
-  //   https://YOURSITE.dealcloud.com/connect/token           (on-prem / some tenants)
   if (process.env.DEALCLOUD_TOKEN_URL) {
-    // Auto-correct a common misconfiguration: the REST API path
-    // (/api/rest/v1/oauth/token) mistakenly used instead of the OpenID Connect
-    // token endpoint (/connect/token).
-    return process.env.DEALCLOUD_TOKEN_URL.replace(
-      /\/api\/rest\/v\d+\/oauth\/token$/,
-      '/connect/token',
-    );
+    return process.env.DEALCLOUD_TOKEN_URL;
   }
   const siteUrl = process.env.DEALCLOUD_SITE_URL?.replace(/\/$/, '');
-  if (siteUrl) return `${siteUrl}/connect/token`;
-  return 'https://unifiedidentity6.dealcloud.com/connect/token';
+  if (siteUrl) return `${siteUrl}/api/rest/v1/oauth/token`;
+  return 'https://unifiedidentity6.dealcloud.com/api/rest/v1/oauth/token';
 }
 const REQUEST_DELAY_MS = 500;
 const MAX_RETRIES = 3;
