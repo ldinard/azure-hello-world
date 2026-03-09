@@ -15,6 +15,26 @@ function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Strips the offending field named in a "does not exist" error and retries (up to 15 bad fields).
+async function createRowsStrippingBadFields(
+  entryTypeId: number,
+  rows: Record<string, unknown>[],
+): Promise<{ created: number; failed: number; results: unknown[]; sampleErrors: unknown[] }> {
+  let currentRows = rows;
+  for (let attempt = 0; attempt < 15; attempt++) {
+    try {
+      return await createRows(entryTypeId, currentRows);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      const match = msg.match(/Field with name "([^"]+)" does not exist/);
+      if (!match) throw err;
+      const badField = match[1];
+      currentRows = currentRows.map(({ [badField]: _removed, ...rest }) => rest);
+    }
+  }
+  throw new Error('Too many unknown fields — aborted after 15 retries');
+}
+
 export async function POST(req: NextRequest) {
   const { entryTypeId, count } = (await req.json()) as { entryTypeId: number; count: number };
 
@@ -86,7 +106,7 @@ export async function POST(req: NextRequest) {
           }
 
           try {
-            const { created, failed } = await createRows(entryTypeId, payload);
+            const { created, failed } = await createRowsStrippingBadFields(entryTypeId, payload);
             totalCreated += created;
             totalFailed += failed;
 
