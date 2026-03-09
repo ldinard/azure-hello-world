@@ -28,24 +28,15 @@ export async function POST(req: NextRequest) {
 
   const writableFields = getWritableFields(entryTypeId);
 
-  // Fetch live schema Choice fields so generated payloads match the actual DealCloud instance
-  let liveChoiceNames: Set<string> | null = null;
+  // Fetch live schema to get actual field api names that exist in this DealCloud instance
+  let effectiveFields: FieldDef[] = writableFields;
   try {
     const liveFields = (await fetchSchemaFields(entryTypeId)) as LiveField[];
-    liveChoiceNames = new Set(
-      liveFields.filter(f => f.fieldType === 'Choice').map(f => f.apiName),
-    );
+    const liveApiNames = new Set(liveFields.map(f => f.apiName));
+    effectiveFields = writableFields.filter(f => liveApiNames.has(f.apiName));
   } catch {
-    // Fall back to hardcoded schema filtering in toRowApiPayload
+    // Fall back to full hardcoded schema
   }
-
-  // Build the effective field list: override fieldType to 'Choice' for any field the live
-  // schema identifies as a Choice, so toRowApiPayload correctly skips them.
-  const effectiveFields: FieldDef[] = liveChoiceNames
-    ? writableFields.map(f =>
-        liveChoiceNames!.has(f.apiName) ? { ...f, fieldType: 'Choice' as const } : f,
-      )
-    : writableFields;
 
   const totalBatches = Math.ceil(count / BATCH_SIZE);
   const encoder = new TextEncoder();
