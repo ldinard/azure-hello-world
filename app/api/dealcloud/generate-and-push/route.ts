@@ -26,7 +26,9 @@ async function createRowsStrippingBadFields(
       return await createRows(entryTypeId, currentRows);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      const match = msg.match(/Field with name "([^"]+)" does not exist/);
+      // DealCloud returns JSON with escaped quotes: "Field with name \"Address\" does not exist"
+      // so the raw text in the error message has literal backslash-quote sequences
+      const match = msg.match(/Field with name \\"?([^"\\]+)\\"? does not exist/);
       if (!match) throw err;
       const badField = match[1];
       currentRows = currentRows.map(({ [badField]: _removed, ...rest }) => rest);
