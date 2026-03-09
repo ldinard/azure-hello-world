@@ -39,9 +39,13 @@ export async function POST(req: NextRequest) {
       Array.isArray(rawSchema) ? rawSchema : ((rawSchema as { data?: LiveField[] }).data ?? [])
     ) as LiveField[];
     if (liveFields.length > 0) {
-      // Case-insensitive match so 'openDate' in live schema matches 'OpenDate' in hardcoded schema
-      const liveApiNamesLower = new Set(liveFields.map(f => f.apiName?.toLowerCase()).filter(Boolean));
-      effectiveFields = writableFields.filter(f => liveApiNamesLower.has(f.apiName.toLowerCase()));
+      // Match case-insensitively, then use the LIVE apiName (exact DealCloud casing) as the payload key
+      effectiveFields = writableFields
+        .map(f => {
+          const live = liveFields.find(lf => lf.apiName?.toLowerCase() === f.apiName.toLowerCase());
+          return live ? { ...f, apiName: live.apiName } : null;
+        })
+        .filter((f): f is FieldDef => f !== null);
     }
   } catch {
     // Live schema unavailable — use Name-only fields to guarantee create succeeds
