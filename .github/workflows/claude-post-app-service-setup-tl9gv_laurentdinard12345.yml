@@ -6,8 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - laurentdinard12345
 on:
   push:
     branches:
-      - master
-      - claude/post-app-service-setup-TL9GV
+      - claude/hello-world-express-app-n2oTS
   workflow_dispatch:
 
 jobs:
