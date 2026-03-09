@@ -98,7 +98,7 @@ export async function createRows(
   entryTypeId: number,
   rows: Record<string, unknown>[],
 ): Promise<{ created: number; failed: number; results: unknown[]; sampleErrors: unknown[] }> {
-  const res = await apiRequest(`/api/rest/v1/data/${entryTypeId}`, {
+  const res = await apiRequest(`/api/rest/v4/data/entrydata/rows/${entryTypeId}`, {
     method: 'POST',
     body: JSON.stringify(rows),
   });
@@ -152,9 +152,9 @@ export async function queryRowsPage(
   skip = 0,
   limit = 1000,
 ): Promise<{ rows: unknown[]; total: number }> {
-  const res = await apiRequest(`/api/rest/v1/data/${entryTypeId}/listrows`, {
+  const res = await apiRequest(`/api/rest/v4/data/entrydata/rows/query/${entryTypeId}`, {
     method: 'POST',
-    body: JSON.stringify({ offset: skip, pageSize: Math.min(limit, 1000), fields: fieldIds }),
+    body: JSON.stringify({ skip, limit: Math.min(limit, 1000) }),
   });
 
   if (!res.ok) {
@@ -167,7 +167,7 @@ export async function queryRowsPage(
 }
 
 export async function fetchSchemaFields(entryTypeId: number): Promise<unknown[]> {
-  const res = await apiRequest(`/api/rest/v1/schema/${entryTypeId}/fields`);
+  const res = await apiRequest(`/api/rest/v4/schema/entrytypes/${entryTypeId}/fields`);
 
   if (!res.ok) {
     const text = await res.text();
