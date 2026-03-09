@@ -29,13 +29,22 @@ export async function POST(req: NextRequest) {
   const writableFields = getWritableFields(entryTypeId);
 
   // Fetch live schema to get actual field api names that exist in this DealCloud instance
-  let effectiveFields: FieldDef[] = writableFields;
+  // Fall back to Name-only (always valid) if the schema fetch fails or returns unusable data
+  const nameOnlyFields = writableFields.filter(f => f.apiName === 'Name' || f.required);
+  let effectiveFields: FieldDef[] = nameOnlyFields;
   try {
-    const liveFields = (await fetchSchemaFields(entryTypeId)) as LiveField[];
-    const liveApiNames = new Set(liveFields.map(f => f.apiName));
-    effectiveFields = writableFields.filter(f => liveApiNames.has(f.apiName));
+    const rawSchema = await fetchSchemaFields(entryTypeId);
+    // Handle both plain array and { data: [...] } wrapped responses
+    const liveFields = (
+      Array.isArray(rawSchema) ? rawSchema : ((rawSchema as { data?: LiveField[] }).data ?? [])
+    ) as LiveField[];
+    if (liveFields.length > 0) {
+      // Case-insensitive match so 'openDate' in live schema matches 'OpenDate' in hardcoded schema
+      const liveApiNamesLower = new Set(liveFields.map(f => f.apiName?.toLowerCase()).filter(Boolean));
+      effectiveFields = writableFields.filter(f => liveApiNamesLower.has(f.apiName.toLowerCase()));
+    }
   } catch {
-    // Fall back to full hardcoded schema
+    // Live schema unavailable — use Name-only fields to guarantee create succeeds
   }
 
   const totalBatches = Math.ceil(count / BATCH_SIZE);
