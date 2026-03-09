@@ -28,7 +28,7 @@ async function getAccessToken(): Promise<string> {
     grant_type: 'client_credentials',
     client_id: clientId,
     client_secret: apiKey,
-    scope: 'data',
+    scope: 'data user_management',
   });
 
   const tokenEndpoint = getTokenEndpoint();
