@@ -1,7 +1,12 @@
 import { NextRequest } from 'next/server';
-import { entryTypes, getWritableFields } from '@/lib/dealcloud-schema';
+import { entryTypes, getWritableFields, type FieldDef } from '@/lib/dealcloud-schema';
 import { generateSampleRecord, toRowApiPayload, resetRunId } from '@/lib/sample-data-generator';
-import { createRows } from '@/lib/dealcloud-api';
+import { createRows, fetchSchemaFields } from '@/lib/dealcloud-api';
+
+interface LiveField {
+  apiName: string;
+  fieldType?: string;
+}
 
 const BATCH_SIZE = 1000;
 const BATCH_DELAY_MS = 500;
@@ -22,6 +27,26 @@ export async function POST(req: NextRequest) {
   }
 
   const writableFields = getWritableFields(entryTypeId);
+
+  // Fetch live schema Choice fields so generated payloads match the actual DealCloud instance
+  let liveChoiceNames: Set<string> | null = null;
+  try {
+    const liveFields = (await fetchSchemaFields(entryTypeId)) as LiveField[];
+    liveChoiceNames = new Set(
+      liveFields.filter(f => f.fieldType === 'Choice').map(f => f.apiName),
+    );
+  } catch {
+    // Fall back to hardcoded schema filtering in toRowApiPayload
+  }
+
+  // Build the effective field list: override fieldType to 'Choice' for any field the live
+  // schema identifies as a Choice, so toRowApiPayload correctly skips them.
+  const effectiveFields: FieldDef[] = liveChoiceNames
+    ? writableFields.map(f =>
+        liveChoiceNames!.has(f.apiName) ? { ...f, fieldType: 'Choice' as const } : f,
+      )
+    : writableFields;
+
   const totalBatches = Math.ceil(count / BATCH_SIZE);
   const encoder = new TextEncoder();
 
@@ -49,11 +74,11 @@ export async function POST(req: NextRequest) {
           const remaining = count - batchIndex * BATCH_SIZE;
           const batchCount = Math.min(remaining, BATCH_SIZE);
 
-          // Generate batch server-side
+          // Generate batch server-side using live-schema-aware field list
           const payload: Record<string, unknown>[] = [];
           for (let i = 0; i < batchCount; i++) {
-            const record = generateSampleRecord(writableFields);
-            payload.push(toRowApiPayload(record, writableFields));
+            const record = generateSampleRecord(effectiveFields);
+            payload.push(toRowApiPayload(record, effectiveFields));
           }
 
           try {

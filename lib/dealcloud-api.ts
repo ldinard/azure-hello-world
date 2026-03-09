@@ -110,9 +110,15 @@ export async function createRows(
     throw new Error(`Failed to create rows: ${res.status} ${text}`);
   }
 
-  const results = (await res.json()) as Array<Record<string, unknown>>;
-  const created = results.filter(r => (r.EntryId as number) > 0).length;
-  const failedRows = results.filter(r => (r.EntryId as number) <= 0);
+  const responseData = await res.json();
+  // Handle both plain-array and wrapped { data: [...] } response formats
+  const results = (
+    Array.isArray(responseData)
+      ? responseData
+      : ((responseData as { data?: unknown[] }).data ?? [])
+  ) as Array<Record<string, unknown>>;
+  const created = results.filter(r => r != null && (r.EntryId as number) > 0).length;
+  const failedRows = results.filter(r => r == null || (r.EntryId as number) <= 0);
   const sampleErrors = failedRows.slice(0, 3);
   return { created, failed: failedRows.length, results, sampleErrors };
 }
