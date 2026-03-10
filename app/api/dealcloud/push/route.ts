@@ -19,13 +19,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'entryTypeId and rows are required' }, { status: 400 });
     }
 
-    // Attempt live schema fetch; fall back to hardcoded schema
+    // Fetch live schema to identify Choice fields and the exact set of fields that exist
+    // in this DealCloud instance. Fall back to the hardcoded schema when unavailable.
     let choiceApiNames = new Set<string>();
+    let liveApiNamesLower: Map<string, string> | null = null;
     try {
-      const liveFields = (await fetchSchemaFields(entryTypeId)) as LiveField[];
-      choiceApiNames = new Set(
-        liveFields.filter(f => f.fieldType === 'Choice').map(f => f.apiName),
-      );
+      const rawSchema = await fetchSchemaFields(entryTypeId);
+      const liveFields = (
+        Array.isArray(rawSchema)
+          ? rawSchema
+          : ((rawSchema as { data?: LiveField[] }).data ?? [])
+      ) as LiveField[];
+      if (liveFields.length > 0) {
+        choiceApiNames = new Set(
+          liveFields.filter(f => f.fieldType === 'Choice').map(f => f.apiName),
+        );
+        liveApiNamesLower = new Map(liveFields.map(f => [f.apiName.toLowerCase(), f.apiName]));
+      }
     } catch {
       // Fall back to local schema
       const localFields = getWritableFields(entryTypeId);
@@ -34,12 +44,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Normalize and filter rows
+    // Normalize rows: re-assert EntryId: -1, strip Choice fields, and (when live schema is
+    // available) drop any fields not present in the live DealCloud instance.
     const normalizedRows = rows.map(row => {
       const out: Record<string, unknown> = { EntryId: -1 };
       for (const [k, v] of Object.entries(row)) {
         if (k === 'EntryId') continue;
         if (choiceApiNames.has(k)) continue;
+        if (liveApiNamesLower !== null && !liveApiNamesLower.has(k.toLowerCase())) continue;
         out[k] = v;
       }
       return out;

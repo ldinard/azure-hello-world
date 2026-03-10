@@ -25,15 +25,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'entryTypeId and rows are required' }, { status: 400 });
     }
 
-    // Fetch live schema to get accurate Choice field names; fall back to hardcoded schema.
-    // This mirrors the approach in push/route.ts to ensure Choice fields are always filtered
-    // even when the hardcoded schema diverges from the actual DealCloud instance.
+    // Fetch live schema to identify Choice fields and the exact set of fields that exist
+    // in this DealCloud instance. Fall back to the hardcoded schema when unavailable.
+    // Using live schema field names (case-insensitive match) ensures we never send a field
+    // that DealCloud doesn't recognise — which causes it to silently reject every record
+    // in the batch with EntryId: -1 rather than returning a 4xx error.
     let choiceApiNames = new Set<string>();
+    let liveApiNamesLower: Map<string, string> | null = null; // lower → original casing
     try {
-      const liveFields = (await fetchSchemaFields(entryTypeId)) as LiveField[];
-      choiceApiNames = new Set(
-        liveFields.filter(f => f.fieldType === 'Choice').map(f => f.apiName),
-      );
+      const rawSchema = await fetchSchemaFields(entryTypeId);
+      const liveFields = (
+        Array.isArray(rawSchema)
+          ? rawSchema
+          : ((rawSchema as { data?: LiveField[] }).data ?? [])
+      ) as LiveField[];
+      if (liveFields.length > 0) {
+        choiceApiNames = new Set(
+          liveFields.filter(f => f.fieldType === 'Choice').map(f => f.apiName),
+        );
+        liveApiNamesLower = new Map(liveFields.map(f => [f.apiName.toLowerCase(), f.apiName]));
+      }
     } catch {
       const localFields = getWritableFields(entryTypeId);
       choiceApiNames = new Set(
@@ -41,12 +52,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Normalize rows: re-assert EntryId: -1 and strip any Choice fields
+    // Normalize rows: re-assert EntryId: -1, strip Choice fields, and (when live schema is
+    // available) drop any fields not present in the live DealCloud instance.
     const normalizedRows = rows.map(row => {
       const out: Record<string, unknown> = { EntryId: -1 };
       for (const [k, v] of Object.entries(row)) {
         if (k === 'EntryId') continue;
         if (choiceApiNames.has(k)) continue;
+        if (liveApiNamesLower !== null && !liveApiNamesLower.has(k.toLowerCase())) continue;
         out[k] = v;
       }
       return out;
