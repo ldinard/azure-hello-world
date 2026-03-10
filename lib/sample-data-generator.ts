@@ -72,8 +72,11 @@ function generateTextValue(field: FieldDef): string {
     case 'BusinessEmail':return randEmail(pick(firstNames), pick(lastNames), pick(companyNames));
     case 'JobTitle':     return pick(jobTitles);
     case 'Phone':
+    case 'PhoneNumber':
+    case 'DirectOffice':
     case 'MobilePhone':  return randPhone();
-    case 'Address':      return `${randInt(100, 9999)} ${pick(streets)}`;
+    case 'Address':
+    case 'AddressLine1': return `${randInt(100, 9999)} ${pick(streets)}`;
     case 'City': {
       const i = randInt(0, cities.length - 1);
       return cities[i];

@@ -78,7 +78,7 @@ const contactFields: FieldDef[] = [
 
 // ─── Opportunity ───────────────────────────────────────────────────────────────
 const opportunityFields: FieldDef[] = [
-  { objectName: 'Opportunity', objectId: 65565, objectType: 'Entity', fieldName: 'Opportunity Name', fieldId: 10201, apiName: 'Name', fieldType: 'Text', formatType: 'Text', systemFieldType: 'Name', required: true, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: false, isSystemField: false },
+  { objectName: 'Opportunity', objectId: 65565, objectType: 'Entity', fieldName: 'Opportunity Name', fieldId: 10201, apiName: 'Name', fieldType: 'Text', formatType: 'Text', systemFieldType: 'Name', required: true, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: true, isSystemField: false },
   { objectName: 'Opportunity', objectId: 65565, objectType: 'Entity', fieldName: 'Description', fieldId: 10202, apiName: 'Description', fieldType: 'Text', formatType: 'Text', systemFieldType: '', required: false, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: false, isSystemField: false },
   { objectName: 'Opportunity', objectId: 65565, objectType: 'Entity', fieldName: 'Est. Fees', fieldId: 10203, apiName: 'EstimatedFees', fieldType: 'Number', formatType: 'Currency', systemFieldType: '', required: false, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: false, isSystemField: false },
   { objectName: 'Opportunity', objectId: 65565, objectType: 'Entity', fieldName: 'Added Date', fieldId: 10204, apiName: 'AddedDate', fieldType: 'Date', formatType: 'Date', systemFieldType: '', required: false, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: false, isSystemField: false },
@@ -87,7 +87,7 @@ const opportunityFields: FieldDef[] = [
 
 // ─── Client ────────────────────────────────────────────────────────────────────
 const clientFields: FieldDef[] = [
-  { objectName: 'Client', objectId: 84596, objectType: 'Entity', fieldName: 'Name', fieldId: 10301, apiName: 'Name', fieldType: 'Text', formatType: 'Text', systemFieldType: 'Name', required: true, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: false, isSystemField: false },
+  { objectName: 'Client', objectId: 84596, objectType: 'Entity', fieldName: 'Name', fieldId: 10301, apiName: 'Name', fieldType: 'Text', formatType: 'Text', systemFieldType: 'Name', required: true, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: true, isSystemField: false },
   { objectName: 'Client', objectId: 84596, objectType: 'Entity', fieldName: 'Client Status', fieldId: 10302, apiName: 'ClientStatus', fieldType: 'Choice', formatType: 'SingleSelect', systemFieldType: '', required: false, multiSelect: false, choiceValues: ['Active', 'Inactive', 'Prospect', 'Former'], referencedObjects: [], isCalculated: false, isSystemField: false },
   { objectName: 'Client', objectId: 84596, objectType: 'Entity', fieldName: 'Client Open On', fieldId: 10303, apiName: 'ClientOpenOn', fieldType: 'Date', formatType: 'Date', systemFieldType: '', required: false, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: false, isSystemField: false },
   { objectName: 'Client', objectId: 84596, objectType: 'Entity', fieldName: 'Client Closed On', fieldId: 10304, apiName: 'ClientClosedOn', fieldType: 'Date', formatType: 'Date', systemFieldType: '', required: false, multiSelect: false, choiceValues: [], referencedObjects: [], isCalculated: false, isSystemField: false },
