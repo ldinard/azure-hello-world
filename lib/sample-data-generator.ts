@@ -144,9 +144,17 @@ export function toRowApiPayload(
     if (field.fieldType === 'Choice') continue;
     if (field.isCalculated || field.isSystemField) continue;
     const value = record[field.apiName];
-    if (value !== undefined && value !== null) {
-      payload[field.apiName] = value;
+    if (value === undefined || value === null) continue;
+    // DealCloud REST v4 expects date values as Unix timestamps in milliseconds (integer),
+    // not ISO strings. Convert "YYYY-MM-DD" strings to ms before sending.
+    if (field.fieldType === 'Date' && typeof value === 'string') {
+      const ms = Date.parse(value);
+      if (!isNaN(ms)) {
+        payload[field.apiName] = ms;
+        continue;
+      }
     }
+    payload[field.apiName] = value;
   }
   return payload;
 }
