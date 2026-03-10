@@ -23,10 +23,10 @@ const prefixes = ['Mr.','Ms.','Dr.','Prof.'];
 const suffixes = ['Jr.','Sr.','III','Esq.',''];
 const exchanges = ['NYSE','NASDAQ','AMEX','OTC','LSE'];
 
-let runId = Date.now().toString(36);
+let runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 export function resetRunId() {
-  runId = Date.now().toString(36);
+  runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
 function pick<T>(arr: T[]): T {
@@ -145,12 +145,12 @@ export function toRowApiPayload(
     if (field.isCalculated || field.isSystemField) continue;
     const value = record[field.apiName];
     if (value === undefined || value === null) continue;
-    // DealCloud REST v4 expects date values as Unix timestamps in milliseconds (integer),
-    // not ISO strings. Convert "YYYY-MM-DD" strings to ms before sending.
+    // DealCloud REST v4 expects date values as full ISO 8601 datetime strings
+    // (e.g. "2021-07-14T00:00:00.000Z"), not bare date strings or Unix timestamps.
     if (field.fieldType === 'Date' && typeof value === 'string') {
       const ms = Date.parse(value);
       if (!isNaN(ms)) {
-        payload[field.apiName] = ms;
+        payload[field.apiName] = new Date(ms).toISOString();
         continue;
       }
     }
