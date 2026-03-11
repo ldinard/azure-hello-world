@@ -24,9 +24,11 @@ const suffixes = ['Jr.','Sr.','III','Esq.',''];
 const exchanges = ['NYSE','NASDAQ','AMEX','OTC','LSE'];
 
 let runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+let recordCounter = 0;
 
 export function resetRunId() {
   runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  recordCounter = 0;
 }
 
 function pick<T>(arr: T[]): T {
@@ -60,10 +62,10 @@ function randEmail(first: string, last: string, company: string) {
 function generateTextValue(field: FieldDef): string {
   switch (field.apiName) {
     case 'Name':
-      if (field.objectName === 'Client') return `${pick(clientNames)} ${runId}`;
-      if (field.objectName === 'Opportunity') return `${pick(opportunityNames)} ${runId}`;
-      if (field.objectName === 'Matter') return `Matter ${runId}-${randInt(1000, 9999)}`;
-      return `${pick(companyNames)} ${runId}`;
+      if (field.objectName === 'Client') return `${pick(clientNames)} ${runId}-${++recordCounter}`;
+      if (field.objectName === 'Opportunity') return `${pick(opportunityNames)} ${runId}-${++recordCounter}`;
+      if (field.objectName === 'Matter') return `Matter ${runId}-${++recordCounter}`;
+      return `${pick(companyNames)} ${runId}-${++recordCounter}`;
     case 'FirstName':    return pick(firstNames);
     case 'LastName':     return pick(lastNames);
     case 'MiddleName':   return pick(firstNames).charAt(0) + '.';
