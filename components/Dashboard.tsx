@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import DataTable from '@/components/DataTable';
 import SiteDataTable from '@/components/SiteDataTable';
 import PushLog, { type LogEntry } from '@/components/PushLog';
+import LatencyMonitor, { type LatencySession } from '@/components/LatencyMonitor';
 
 type ConnectionStatus = 'idle' | 'checking' | 'connected' | 'error';
 
@@ -51,6 +52,7 @@ export default function Dashboard() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [activeTab, setActiveTab] = useState('preview');
   const [pushProgress, setPushProgress] = useState<PushProgress | null>(null);
+  const [latencySession, setLatencySession] = useState<LatencySession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const logIdRef = useRef(0);
 
@@ -104,8 +106,21 @@ export default function Dashboard() {
     setActiveTab('log');
     try {
       resetRunId();
+      // Embed a unique latency marker into the first record's Name field so we
+      // can later identify that exact record in Snowflake.
+      const marker = `LATENCY-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      const pushTime = new Date().toISOString();
       const records = generateSampleRecords(writableFields, recordCount);
       const payloads = records.map(r => toRowApiPayload(r, writableFields));
+      // Inject the marker into the first record's Name field (any text-like field)
+      if (payloads[0]) {
+        const nameKey = Object.keys(payloads[0]).find(k =>
+          /^name$/i.test(k) || /name/i.test(k),
+        );
+        if (nameKey) {
+          (payloads[0] as Record<string, unknown>)[nameKey] = marker;
+        }
+      }
 
       const res = await fetch('/api/dealcloud/push-v2', {
         method: 'POST',
@@ -125,6 +140,11 @@ export default function Dashboard() {
         data.failed > 0 ? 'warning' : 'success',
         `Push complete — ${data.created} created, ${data.failed} failed`,
       );
+      if (data.created > 0) {
+        setLatencySession({ pushTime, marker, entryTypeName: selectedET.objectName });
+        addLog('info', `Latency monitor started — marker: ${marker}`);
+        setActiveTab('latency');
+      }
       if (data.failed > 0) {
         const batchError = data.batches?.find(b => b.error)?.error;
         if (batchError) {
@@ -148,6 +168,9 @@ export default function Dashboard() {
     setPushProgress(null);
     addLog('info', `Starting server-side generation of ${recordCount.toLocaleString()} records…`);
     setActiveTab('log');
+
+    const largePushMarker = `LATENCY-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const largePushTime = new Date().toISOString();
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -200,6 +223,15 @@ export default function Dashboard() {
                 `Done — ${Number(event.totalCreated).toLocaleString()} created, ${Number(event.totalFailed).toLocaleString()} failed`,
               );
               setPushProgress(null);
+              if (Number(event.totalCreated) > 0) {
+                setLatencySession({
+                  pushTime: largePushTime,
+                  marker: largePushMarker,
+                  entryTypeName: selectedET.objectName,
+                });
+                addLog('info', `Latency monitor started — marker: ${largePushMarker}`);
+                setActiveTab('latency');
+              }
             } else if (event.type === 'error') {
               addLog('error', 'Server error', String(event.error));
             }
@@ -498,6 +530,12 @@ export default function Dashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="latency">
+                  Sync Latency
+                  {latencySession && (
+                    <span className="ml-1 w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block" />
+                  )}
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -584,6 +622,13 @@ export default function Dashboard() {
                 <ScrollArea className="h-full p-3">
                   <PushLog entries={pushLog} />
                 </ScrollArea>
+              </div>
+            </TabsContent>
+
+            {/* Sync Latency */}
+            <TabsContent value="latency" className="flex-1 overflow-hidden px-5 pb-4 mt-3">
+              <div className="h-full border border-border rounded-md overflow-hidden p-3">
+                <LatencyMonitor session={latencySession} />
               </div>
             </TabsContent>
           </Tabs>
