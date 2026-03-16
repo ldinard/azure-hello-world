@@ -160,7 +160,7 @@ export async function queryRowsPage(
 ): Promise<{ rows: unknown[]; total: number }> {
   const res = await apiRequest(`/api/rest/v4/data/entrydata/rows/query/${entryTypeId}`, {
     method: 'POST',
-    body: JSON.stringify({ skip, limit: Math.min(limit, 1000) }),
+    body: JSON.stringify({ skip, limit: Math.min(limit, 1000), fieldIds }),
   });
 
   if (!res.ok) {
