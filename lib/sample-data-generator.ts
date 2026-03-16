@@ -89,9 +89,9 @@ function generateTextValue(field: FieldDef): string {
     }
     case 'PostalCode':   return String(randInt(10000, 99999));
     case 'Description':  return pick(descriptions);
-    case 'Website':      return `https://www.${pick(companyNames).toLowerCase().replace(/\s/g, '')}.com`;
-    case 'LinkedInURL':  return `https://linkedin.com/in/${pick(firstNames).toLowerCase()}-${pick(lastNames).toLowerCase()}-${randInt(100, 999)}`;
-    case 'Ticker':       return pick(['AAPL','MSFT','GOOG','AMZN','META','TSLA','NFLX','NVDA']).slice(0, 4);
+    case 'Website':      return `https://www.${pick(companyNames).toLowerCase().replace(/\s/g, '')}-${runId}-${++recordCounter}.com`;
+    case 'LinkedInURL':  return `https://linkedin.com/in/${pick(firstNames).toLowerCase()}-${pick(lastNames).toLowerCase()}-${runId}-${++recordCounter}`;
+    case 'Ticker':       return `${pick(['AAP','MSF','GOG','AMZ','MET','TSL','NFL','NVD'])}${randInt(10,99)}`;
     case 'Exchange':     return pick(exchanges);
     case 'Specialties':  return ['Technology', 'Healthcare', 'Finance', 'Real Estate', 'Energy'].slice(0, randInt(1, 3)).join(', ');
     default:             return `${field.fieldName} ${randInt(1, 999)}`;
