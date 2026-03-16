@@ -150,7 +150,13 @@ export default function Dashboard() {
         if (batchError) {
           addLog('error', 'DealCloud error', batchError);
         } else if (data.sampleErrors?.length) {
-          addLog('error', 'Failed record (sample)', JSON.stringify(data.sampleErrors[0], null, 2));
+          const sample = data.sampleErrors[0] as Record<string, unknown> | null;
+          const dcErrors = sample?.Errors;
+          if (dcErrors !== undefined) {
+            addLog('error', 'DealCloud validation errors', JSON.stringify(dcErrors, null, 2));
+          } else {
+            addLog('error', 'Failed record (sample)', JSON.stringify(sample, null, 2));
+          }
         } else {
           addLog('error', 'No error detail returned', JSON.stringify(data, null, 2));
         }

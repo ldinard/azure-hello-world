@@ -117,7 +117,13 @@ export async function createRows(
   ) as Array<Record<string, unknown>>;
   const created = results.filter(r => r != null && (r.EntryId as number) > 0).length;
   const failedRows = results.filter(r => r == null || (r.EntryId as number) <= 0);
-  const sampleErrors = failedRows.slice(0, 3);
+  // Prefer the DealCloud `Errors` array (if present) so callers see the actual
+  // rejection reason rather than a wall of echoed field values.
+  const sampleErrors = failedRows.slice(0, 3).map(r => {
+    if (r == null) return null;
+    const errors = (r as Record<string, unknown>).Errors;
+    return errors !== undefined ? { EntryId: r.EntryId, Errors: errors } : r;
+  });
   return { created, failed: failedRows.length, results, sampleErrors };
 }
 
